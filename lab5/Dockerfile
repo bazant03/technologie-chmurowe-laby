@@ -1,15 +1,17 @@
 # syntax=docker/dockerfile:1
 
 FROM scratch AS build
-ADD filesystem/alpine-minirootfs-3.23.3-x86_64.tar.gz /
+ADD filesystem/alpine-minirootfs-3.23.3-x86_64.tar.gz / 
 
 ARG VERSION
 ENV VERSION=${VERSION}
 
 RUN apk update && apk add --no-cache go 
-COPY src/main.go /app/main.go
 
+COPY src/main.go /app/main.go
 WORKDIR /app
+
+# Umieszczamy wersję aplikacji na sztywno w kodzie w miejscu placeholdera "VVV"
 RUN sed -i "s@VVV@\"${VERSION}\"@g" main.go && \
     CGO_ENABLED=0 go build main.go
 
