@@ -30,11 +30,14 @@ var tpl = template.Must(template.New("page").Parse(`
 func handler(w http.ResponseWriter, r *http.Request) {
     // pobierz nazwę hosta
     hostname, _ := os.Hostname()
+    if hostArg != "" {
+        hostname = hostArg
+    }
     // przygotuj dane do szablonu
     data := PageData{
         IP:       "127.0.0.1",
         Hostname: hostname,
-        Version:  VVV,
+        Version:  versionArg,
     }
     // ustaw nagłówek i wyrenderuj szablon
     w.Header().Set("Content-Type", "text/html; charset=utf-8")
@@ -44,7 +47,19 @@ func handler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-    // zarejestruj handler i uruchom serwer (PORT lub 8080)
+    // parsuj argumenty uruchomieniowe: ./app <version> <hostname>
+    if len(os.Args) > 1 {
+        versionArg = os.Args[1]
+    } else {
+        versionArg = os.Getenv("VERSION")
+    }
+    if versionArg == "" {
+        versionArg = "unknown"
+    }
+    if len(os.Args) > 2 {
+        hostArg = os.Args[2]
+    }
+
     http.HandleFunc("/", handler)
     port := os.Getenv("PORT")
     if port == "" {
@@ -52,3 +67,7 @@ func main() {
     }
     http.ListenAndServe(":"+port, nil)
 }
+
+// zmienne pakietowe ustawiane w main()
+var versionArg string
+var hostArg string
