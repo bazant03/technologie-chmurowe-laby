@@ -3,7 +3,7 @@
 # --------- ETAP 1 ------------------------
 FROM rust AS build
 
-RUN apt-get update && apt-get install -y --no-install-recommends musl-tools
+RUN apt-get update && apt-get install -y --no-install-recommends musl-tools 
 
 RUN useradd -u 10001 weather
 USER weather
@@ -31,7 +31,10 @@ COPY --from=build \
      /weather-rs
 
 # Wgrywamy certyfikat ca API do listy zaufanych certyfikatów aby łączyć z nim przez HTTPS
-COPY cert.crt /etc/ssl/certs/ca-certificates.crt
+COPY --from=build \ 
+     --chown=10001:10001 \
+     /etc/ssl/certs/ca-certificates.crt \ 
+     /etc/ssl/certs/ca-certificates.crt
 
 EXPOSE 80
 
