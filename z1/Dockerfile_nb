@@ -1,0 +1,64 @@
+#syntax=docker/dockerfile:1
+
+# --------- ETAP 1 ------------------------
+FROM rust:1.95.0-trixie AS build
+
+RUN apt-get update && apt-get install -y --no-install-recommends musl-tools 
+
+# Tworzymy użytkownika oraz jego katalog domowy
+RUN useradd -u 10001 weather && \
+     mkdir -p /home/weather && \
+     chown weather:weather /home/weather
+
+USER weather
+WORKDIR /home/weather
+
+RUN mkdir -p -m 0700 .ssh && \
+    ssh-keyscan github.com >> .ssh/known_hosts
+
+# Musimy przyznać użytkownikowi weather uprawnienia do socketu SSH
+RUN --mount=type=ssh,uid=10001 git clone git@github.com:bazant03/tchlab-z1.git weather-app-rust 
+WORKDIR /home/weather/weather-app-rust
+
+ARG TARGETPLATFORM
+
+# Ustawiamy cel kompilacji w zależności od docelowej platformy
+RUN case $TARGETPLATFORM in \
+          "linux/amd64")  TARGET_TRIPLE=x86_64-unknown-linux-musl && \
+                              export CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_LINKER=musl-gcc ;; \
+          "linux/arm64")  TARGET_TRIPLE=aarch64-unknown-linux-musl && \
+                              export CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER=aarch64-linux-musl-gcc ;; \
+          *)              echo "Unsupported platform: $TARGETPLATFORM" && exit 1 ;; \
+     esac && \
+     rustup target add "$TARGET_TRIPLE" && \
+     cargo build --release --target "$TARGET_TRIPLE" && \
+     mkdir -p out && \
+     cp "target/$TARGET_TRIPLE/release/weather-rs" out/weather-rs
+
+# --------- ETAP 2 ------------------------
+FROM scratch AS final
+
+LABEL org.opencontainers.image.source="https://github.com/bazant03/tchlab-z1.git" \
+      org.opencontainers.image.description="Simplest weather app in rust" \
+      org.opencontainers.image.authors="Marek Ruszecki <s101505@pollub.edu.pl>"
+
+# UID i GID zgodne z użytkownikiem z etapu budowania
+USER 10001:10001
+
+COPY --from=build \ 
+     --chown=10001:10001 \
+     /home/weather/weather-app-rust/out/weather-rs \ 
+     /weather-rs
+
+# Wgrywamy certyfikat ca API do listy zaufanych certyfikatów aby łączyć z nim przez HTTPS
+COPY --from=build \ 
+     --chown=10001:10001 \
+     /etc/ssl/certs/ca-certificates.crt \ 
+     /etc/ssl/certs/ca-certificates.crt
+
+EXPOSE 80
+
+# Aplikacja ma tryb --healthcheck, który sprawdza czy główna aplikacja działa
+HEALTHCHECK --interval=5s --timeout=3s --retries=3 CMD ["/weather-rs", "--healthcheck"]
+
+ENTRYPOINT ["/weather-rs"]
