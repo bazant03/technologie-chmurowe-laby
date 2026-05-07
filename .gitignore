@@ -2,3 +2,6 @@
 **/filesystem/
 **/.env
 **/*.crt
+**/sbom.*
+**/build.sh
+**/Cargo.lock
