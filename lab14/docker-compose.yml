@@ -7,7 +7,7 @@ services:
     volumes:
       - ./html:/var/www/html
     networks:
-      - internal
+      - back
 
   nginx:
     image: nginx:1.31.1-alpine
@@ -17,10 +17,17 @@ services:
       - ./html:/var/www/html
       - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
     networks:
-      - internal
+      - front
+      - back
+    ports:
+      - 4001:4001
     depends_on:
       - php
 
 networks:
-  internal:
+  
+  front:
+    driver: bridge
+  
+  back:
     driver: bridge
