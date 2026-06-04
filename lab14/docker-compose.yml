@@ -53,6 +53,8 @@ services:
       - back
     ports:
       - 4001:4001
+    expose:
+      - 4001
     depends_on:
       - php-app
       - phpmyadmin
@@ -68,6 +70,7 @@ networks:
   
   back:
     driver: bridge
+    internal: true
 
 secrets:
   db_password:
