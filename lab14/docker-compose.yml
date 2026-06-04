@@ -5,7 +5,9 @@ services:
     container_name: mysql
     restart: unless-stopped
     environment:
-      - MYSQL_ROOT_PASSWORD=to_nie_produkcja
+      MYSQL_ROOT_PASSWORD_FILE: /run/secrets/db_password
+    secrets:
+      - db_password
     volumes:
       - mysql-data:/var/lib/mysql
     networks:
@@ -15,6 +17,8 @@ services:
     build: .
     container_name: php-app
     restart: unless-stopped
+    secrets:
+      - db_password
     volumes:
       - ./html:/var/www/html
     networks:
@@ -64,3 +68,7 @@ networks:
   
   back:
     driver: bridge
+
+secrets:
+  db_password:
+    file: ./db_password.txt

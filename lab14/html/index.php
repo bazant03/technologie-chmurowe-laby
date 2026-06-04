@@ -12,7 +12,7 @@
     // Dane konfiguracyjne 
     $host = 'mysql'; 
     $user = 'root';
-    $password = 'to_nie_produkcja';
+    $password = file_get_contents('/run/secrets/db_password');
     $charset = 'utf8mb4';
 
     $dsn = "mysql:host=$host;charset=$charset";
