@@ -12,11 +12,25 @@ services:
       - back
 
   php-app:
-    image: php:8.5.7RC2-fpm-alpine3.22
+    build: .
     container_name: php-app
     restart: unless-stopped
     volumes:
       - ./html:/var/www/html
+    networks:
+      - back
+    depends_on:
+      - mysql
+
+  phpmyadmin:
+    image: phpmyadmin:fpm-alpine
+    container_name: phpmyadmin
+    restart: unless-stopped
+    environment:
+      - PMA_HOST=mysql
+      - PMA_ABSOLUTE_URI=http://localhost:4001/pma/
+    volumes:
+      - pma-html:/var/www/html
     networks:
       - back
     depends_on:
@@ -27,6 +41,7 @@ services:
     container_name: nginx
     restart: unless-stopped
     volumes:
+      - pma-html:/var/www/pma-html:ro
       - ./html:/var/www/html
       - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
     networks:
@@ -36,9 +51,11 @@ services:
       - 4001:4001
     depends_on:
       - php-app
+      - phpmyadmin
 
 volumes:
   mysql-data:
+  pma-html:
 
 networks:
   
