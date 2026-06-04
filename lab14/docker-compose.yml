@@ -1,13 +1,26 @@
 services:
   
-  php:
+  mysql:
+    image: mysql:9.7.0
+    container_name: mysql
+    restart: unless-stopped
+    environment:
+      - MYSQL_ROOT_PASSWORD=to_nie_produkcja
+    volumes:
+      - mysql-data:/var/lib/mysql
+    networks:
+      - back
+
+  php-app:
     image: php:8.5.7RC2-fpm-alpine3.22
-    container_name: php
+    container_name: php-app
     restart: unless-stopped
     volumes:
       - ./html:/var/www/html
     networks:
       - back
+    depends_on:
+      - mysql
 
   nginx:
     image: nginx:1.31.1-alpine
@@ -22,7 +35,10 @@ services:
     ports:
       - 4001:4001
     depends_on:
-      - php
+      - php-app
+
+volumes:
+  mysql-data:
 
 networks:
   
