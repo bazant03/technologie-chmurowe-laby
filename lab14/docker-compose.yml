@@ -32,7 +32,6 @@ services:
     restart: unless-stopped
     environment:
       - PMA_HOST=mysql
-      - PMA_ABSOLUTE_URI=http://localhost:4001/pma/
     volumes:
       - pma-html:/var/www/html
     networks:
@@ -53,8 +52,10 @@ services:
       - back
     ports:
       - 4001:4001
+      - 6001:6001
     expose:
       - 4001
+      - 6001
     depends_on:
       - php-app
       - phpmyadmin
